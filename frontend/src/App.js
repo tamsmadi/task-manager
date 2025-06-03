@@ -1,80 +1,61 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import "./App.css";
+import React, { useState } from "react";
+import { Plus, Edit3, Trash2, Check, X, Calendar, Clock } from "lucide-react";
+import styles from "./App.module.css";
 
 const App = () => {
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState([
+    {
+      _id: "1",
+      title: "Complete React project",
+      description: "Finish the task manager application with modern UI design",
+      completed: false,
+      createdAt: new Date().toISOString()
+    },
+    {
+      _id: "2", 
+      title: "Review code",
+      description: "Code review for the new authentication system",
+      completed: true,
+      createdAt: new Date(Date.now() - 86400000).toISOString()
+    },
+    {
+      _id: "3",
+      title: "Team meeting",
+      description: "Weekly standup meeting with the development team",
+      completed: false,
+      createdAt: new Date(Date.now() - 3600000).toISOString()
+    }
+  ]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [editId, setEditId] = useState(null);
-
-  // Fetch tasks
-  useEffect(() => {
-    axios
-      .get("http://localhost:5000/api/tasks")
-      .then((res) => {
-        console.log("Fetched tasks:", res.data);
-        setTasks(res.data);
-      })
-      .catch((err) => console.error("Fetch error:", err));
-  }, []);
+  const [filter, setFilter] = useState("all");
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    console.log("Submitting:", { title, description, editId });
+  const handleSubmit = () => {
+    if (!title.trim() || !description.trim()) return;
     
     if (editId) {
       // Update task
-      try {
-        const res = await axios.put(
-          `http://localhost:5000/api/tasks/${editId}`,
-          { title, description }
-        );
-        console.log("Update response:", res.data);
-        setTasks(tasks.map((task) => (task._id === editId ? res.data : task)));
-        setEditId(null);
-      } catch (err) {
-        console.error("Update error:", err.message, err.response?.data);
-      }
+      const updatedTask = {
+        _id: editId,
+        title,
+        description,
+        completed: tasks.find(t => t._id === editId)?.completed || false,
+        createdAt: tasks.find(t => t._id === editId)?.createdAt || new Date().toISOString()
+      };
+      setTasks(tasks.map((task) => (task._id === editId ? updatedTask : task)));
+      setEditId(null);
     } else {
       // Create task
-      try {
-        const res = await axios.post(`http://localhost:5000/api/tasks`, {
-          title,
-          description,
-        });
-        
-        console.log("Create response:", res.data);
-        
-        // Handle different possible response structures
-        let newTask;
-        if (res.data.data) {
-          // If your backend returns { success: true, data: taskObject }
-          newTask = res.data.data;
-        } else if (res.data.task) {
-          // If your backend returns { task: taskObject }
-          newTask = res.data.task;
-        } else {
-          // If your backend returns the task object directly
-          newTask = res.data;
-        }
-        
-        // Ensure the task has an _id (required for React key and other operations)
-        if (!newTask._id) {
-          console.error("Created task doesn't have _id:", newTask);
-          // Fallback: refetch all tasks
-          const fetchRes = await axios.get("http://localhost:5000/api/tasks");
-          setTasks(fetchRes.data);
-        } else {
-          // Add the new task to the existing tasks
-          setTasks(prevTasks => [...prevTasks, newTask]);
-          console.log("Added new task to state:", newTask);
-        }
-        
-      } catch (err) {
-        console.error("Create error:", err.message, err.response?.data);
-      }
+      const newTask = {
+        _id: Date.now().toString(),
+        title,
+        description,
+        completed: false,
+        createdAt: new Date().toISOString()
+      };
+      setTasks(prevTasks => [...prevTasks, newTask]);
     }
     
     // Clear form
@@ -84,80 +65,195 @@ const App = () => {
 
   // Handle edit
   const handleEdit = (task) => {
-    console.log("Editing task:", task._id);
     setEditId(task._id);
     setTitle(task.title);
     setDescription(task.description);
   };
 
   // Handle delete
-  const handleDelete = async (id) => {
-    console.log("Deleting task with ID:", id);
-    if (!id) {
-      console.error("Task ID is undefined, cannot delete");
-      return;
-    }
-    try {
-      await axios.delete(`http://localhost:5000/api/tasks/${id}`);
-      setTasks(tasks.filter((task) => task._id !== id));
-    } catch (err) {
-      console.error("Delete error:", err.message, err.response?.data);
-    }
+  const handleDelete = (id) => {
+    setTasks(tasks.filter((task) => task._id !== id));
   };
 
   // Toggle completion
-  const handleToggleComplete = async (task) => {
-    console.log("Toggling task:", task._id, "to completed:", !task.completed);
-    try {
-      const res = await axios.put(
-        `http://localhost:5000/api/tasks/${task._id}`,
-        {
-          ...task,
-          completed: !task.completed,
-        }
-      );
-      console.log("Toggle response:", res.data);
-      setTasks(tasks.map((t) => (t._id === task._id ? res.data : t)));
-    } catch (err) {
-      console.error("Toggle error:", err.message, err.response?.data);
-    }
+  const handleToggleComplete = (task) => {
+    const updatedTask = { ...task, completed: !task.completed };
+    setTasks(tasks.map((t) => (t._id === task._id ? updatedTask : t)));
   };
 
+  // Cancel edit
+  const handleCancelEdit = () => {
+    setEditId(null);
+    setTitle("");
+    setDescription("");
+  };
+
+  // Filter tasks
+  const filteredTasks = tasks.filter(task => {
+    if (filter === "completed") return task.completed;
+    if (filter === "pending") return !task.completed;
+    return true;
+  });
+
+  // Format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = now - date;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  const completedCount = tasks.filter(task => task.completed).length;
+  const totalCount = tasks.length;
+
   return (
-    <div className="container">
-      <h1>Task Manager</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Task Title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <textarea
-          placeholder="Task Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
-        />
-        <button type="submit">{editId ? "Update Task" : "Add Task"}</button>
-      </form>
-      <ul>
-        {tasks.map((task) => (
-          <li key={task._id} className={task.completed ? "completed" : ""}>
+    <div className={styles.container}>
+      <div className={styles.innerContainer}>
+        {/* Header */}
+        <div className={styles.header}>
+          <h1 className={styles.title}>Task Manager</h1>
+          <p className={styles.subtitle}>Stay organized and boost your productivity</p>
+          
+          {/* Stats */}
+          <div className={styles.statsContainer}>
+            <div className={styles.statCard}>
+              <div className={`${styles.statNumber} ${styles.total}`}>{totalCount}</div>
+              <div className={styles.statLabel}>Total Tasks</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={`${styles.statNumber} ${styles.completed}`}>{completedCount}</div>
+              <div className={styles.statLabel}>Completed</div>
+            </div>
+            <div className={styles.statCard}>
+              <div className={`${styles.statNumber} ${styles.pending}`}>{totalCount - completedCount}</div>
+              <div className={styles.statLabel}>Pending</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Task Form */}
+        <div className={styles.formCard}>
+          <div className={styles.formGroup}>
             <input
-              type="checkbox"
-              checked={task.completed || false}
-              onChange={() => handleToggleComplete(task)}
+              type="text"
+              placeholder="What needs to be done?"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className={styles.input}
             />
-            <span>
-              {task.title}: {task.description}
-            </span>
-            <button onClick={() => handleEdit(task)}>Edit</button>
-            <button onClick={() => handleDelete(task._id)}>Delete</button>
-          </li>
-        ))}
-      </ul>
+          </div>
+          <div className={styles.formGroup}>
+            <textarea
+              placeholder="Add a description (optional)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className={styles.textarea}
+            />
+          </div>
+          <div className={styles.buttonContainer}>
+            <button onClick={handleSubmit} className={styles.primaryButton}>
+              <Plus size={20} />
+              {editId ? "Update Task" : "Add Task"}
+            </button>
+            {editId && (
+              <button onClick={handleCancelEdit} className={styles.secondaryButton}>
+                <X size={20} />
+                Cancel
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className={styles.filterContainer}>
+          <div className={styles.filterTabs}>
+            {["all", "pending", "completed"].map((filterType) => (
+              <button
+                key={filterType}
+                onClick={() => setFilter(filterType)}
+                className={`${styles.filterTab} ${filter === filterType ? styles.active : ''}`}
+              >
+                {filterType}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Task List */}
+        <div className={styles.tasksList}>
+          {filteredTasks.length === 0 ? (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyIcon}>✨</div>
+              <h3 className={styles.emptyTitle}>No tasks found</h3>
+              <p className={styles.emptyText}>
+                {filter === "all" 
+                  ? "Create your first task to get started!" 
+                  : `No ${filter} tasks at the moment.`}
+              </p>
+            </div>
+          ) : (
+            filteredTasks.map((task) => (
+              <div
+                key={task._id}
+                className={`${styles.taskCard} ${task.completed ? styles.completed : ''}`}
+              >
+                <div className={styles.taskContent}>
+                  {/* Checkbox */}
+                  <div
+                    onClick={() => handleToggleComplete(task)}
+                    className={`${styles.checkbox} ${task.completed ? styles.completed : ''}`}
+                  >
+                    {task.completed && <Check size={14} />}
+                  </div>
+
+                  {/* Task Content */}
+                  <div className={styles.taskInfo}>
+                    <h3 className={`${styles.taskTitle} ${task.completed ? styles.completed : ''}`}>
+                      {task.title}
+                    </h3>
+                    <p className={`${styles.taskDescription} ${task.completed ? styles.completed : ''}`}>
+                      {task.description}
+                    </p>
+                    <div className={styles.taskMeta}>
+                      <div className={styles.taskMetaItem}>
+                        <Calendar size={12} />
+                        {formatDate(task.createdAt)}
+                      </div>
+                      <div className={styles.taskMetaItem}>
+                        <Clock size={12} />
+                        {task.completed ? "Completed" : "In Progress"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className={styles.taskActions}>
+                    <button
+                      onClick={() => handleEdit(task)}
+                      className={`${styles.actionButton} ${styles.edit}`}
+                      title="Edit task"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(task._id)}
+                      className={`${styles.actionButton} ${styles.delete}`}
+                      title="Delete task"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 };
