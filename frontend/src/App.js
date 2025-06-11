@@ -3,6 +3,7 @@ import { Plus, Edit3, Trash2, Check, X, Calendar, Clock } from "lucide-react";
 import styles from "./App.module.css";
 
 const App = () => {
+  const BASE_URL = "https://task-manager-d9h9.onrender.com/api/tasks";
   const [tasks, setTasks] = useState([
     {
       _id: "1",

@@ -5,7 +5,7 @@ const app = express();
 const Task = require('./models/task'); // Adjust the path as necessary
 
 const cors = require('cors');
-app.use(cors({ origin: 'http://localhost:3000' }));
+app.use(cors({ origin: 'https://frontend-theta-ten-31.vercel.app' }));
 
 // app.listen(3000, () => {
 //   console.log("Server is running on localhost http://localhost:3000");
