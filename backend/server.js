@@ -5,7 +5,7 @@ const app = express();
 const Task = require('./models/task'); // Adjust the path as necessary
 
 const cors = require('cors');
-app.use(cors({ origin: 'https://frontend-9qjhok3ar-thamers-projects-274c776d.vercel.app' }));
+app.use(cors({ origin: 'https://task-manager-68gydo1v1-thamers-projects-274c776d.vercel.app' }));
 
 // app.listen(3000, () => {
 //   console.log("Server is running on localhost http://localhost:3000");
