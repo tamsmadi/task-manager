@@ -12,7 +12,8 @@ const cors = require('cors');
 // });
 const allowedOrigins = [
   'https://task-manager-33inajv8g-thamers-projects-274c776d.vercel.app', // Current Vercel URL
-  'http://localhost:3000' // For local testing
+  'http://localhost:3000', // For local testing
+  'https://stalwart-zabaione-1071f2.netlify.app'
 ];
 
 app.use(express.json()); // Middleware to parse JSON bodies
