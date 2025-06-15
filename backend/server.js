@@ -11,7 +11,7 @@ const cors = require('cors');
 //   console.log("Server is running on localhost http://localhost:3000");
 // });
 const allowedOrigins = [
-  'https://task-manager-theta-one-97.vercel.app/', // Current Vercel URL
+  'https://task-manager-33inajv8g-thamers-projects-274c776d.vercel.app', // Current Vercel URL
   'http://localhost:3000' // For local testing
 ];
 
