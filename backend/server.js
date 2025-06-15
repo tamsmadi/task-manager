@@ -5,14 +5,30 @@ const app = express();
 const Task = require('./models/task'); // Adjust the path as necessary
 
 const cors = require('cors');
-app.use(cors({ origin: 'https://task-manager-dgcoxoow3-thamers-projects-274c776d.vercel.app' }));
+// app.use(cors({ origin: 'https://task-manager-dgcoxoow3-thamers-projects-274c776d.vercel.app' }));
 
 // app.listen(3000, () => {
 //   console.log("Server is running on localhost http://localhost:3000");
 // });
+const allowedOrigins = [
+  'https://task-manager-theta-one-97.vercel.app/', // Current Vercel URL
+  'http://localhost:3000' // For local testing
+];
 
 app.use(express.json()); // Middleware to parse JSON bodies
 // app.use(express.urlencoded({ extended: true })); // Middleware to parse URL-encoded bodies
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.post("/api/tasks", (req, res) => {
   // res.send("Task created");
